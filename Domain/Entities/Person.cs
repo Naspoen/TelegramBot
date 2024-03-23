@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Domain.Primitivies;
+using Domain.ValueObjects;
 
 namespace Domain.Entities
 {
@@ -11,35 +14,38 @@ namespace Domain.Entities
     /// </summary>
     public class Person : BaseEntity
     {
-        // TODO: (До четверга) Максимально полно описать сущность персоны (др, возраст, пол, имя). Все поля добавляются через конструктор.
-        public DateTime DateOfBirth { get; set; }
-        public int Age => CalculateAge();
-        /// <summary>
-        /// Пол (true - мужской, false - женский)
-        /// </summary>
-        public bool Gender { get; set; }
-        public string FirstName { get; set; }
-        public string SecondName { get; set; }
-        public string Telegram { get; set; }
-
-        public Person(Guid id, DateTime createdDate, DateTime dateOfBirth, bool gender, string firstName, string secondName, string telegram) : base(id, createdDate)
+        // TODO: Сделать валидацию для всех полей (DateTime до 150 лет, по гендеру (не null И не выбивается из допустимых), Telegram не больше 20 символов, телефон(+, 373, 77, 456789(дальше из них 5), 
+        public Person(Guid id, DateTime createdDate, FullName fullName) : base(id, createdDate)
         {
-            DateOfBirth = dateOfBirth;
-            Gender = gender;
-            FirstName = firstName;
-            SecondName = secondName;
-            Telegram = telegram;
+            fullName = ValidateFullName(fullName);
+            
+            // TODO: * FluentValidator
         }
-        /// <summary>
-        /// Метод для получения возраста
-        /// </summary>
-        private int CalculateAge()
+        public FullName fullName { get; private set; }
+        public DateTime BirthDay { get; private set; }
+        public int Age => DateTime.Now.Year - BirthDay.Year;
+        public Gender Gender { get; private set; }
+        public string PhoneNumber { get; private set; }
+        public string Telegram { get; private set; }
+
+        private FullName ValidateFullName(FullName fullName)
         {
-            DateTime now = DateTime.UtcNow;
-            int age = now.Year - DateOfBirth.Year;
-            if (now < DateOfBirth.AddYears(age)) 
-                age--;
-            return age;
+            // TODO: добавить валидацию, допускающую только русские и английские буквы
+            if (string.IsNullOrEmpty(fullName.FirstName) ||
+                string.IsNullOrEmpty(fullName.LastName))
+            {
+                throw new ValidationException(ValidationMessages.NullOrEmpty);
+            }
+
+            if (fullName.MiddleName != null)
+            {
+                if (fullName.MiddleName == String.Empty)
+                {
+                    throw new ValidationException(message: "Объект не может быть Empty");
+                }
+            }
+
+            return fullName;
         }
     }
 }
